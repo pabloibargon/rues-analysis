@@ -70,11 +70,26 @@ La proyección PCA evidenció cómo, aunque existe una gran masa central de empr
 
 El gráfico de importancia de variables fue fundamental para confirmar que la inflación y el desempleo no son ruido, sino señales determinantes en la caracterización de las empresas.
 
+#figure(
+  image("assets/heatmap_chi.png"),
+  caption: [Mapa de calor de residuos estandarizados (Prueba Chi-Cuadrado).],
+)
+
+Finalmente, la visualización de los residuos estandarizados ofrece una interpretación espacial de la dependencia estadística detectada. A diferencia de un simple valor-p, este gráfico permite identificar las celdas específicas responsables de la asociación: los colores intensos señalan dónde la realidad se desvía drásticamente del modelo teórico de independencia, confirmando visualmente las singularidades del tejido empresarial en regiones como Montería (exceso de entidades sin ánimo de lucro) y Antioquia (preferencia por la sociedad civil).
+
 = Resolución del problema
 
 El análisis realizado permite concluir que el tejido empresarial colombiano no es uniforme. La integración de datos macroeconómicos demostró ser una estrategia efectiva, ya que las variables derivadas del Banco Mundial figuraron entre los principales predictores del comportamiento societario.
 
 Se responde afirmativamente al problema planteado: existen diferencias estructurales significativas dependientes de la región y del momento económico. Las políticas de fomento empresarial o formalización no deberían ser homogéneas, dado que regiones como Antioquia o Montería exhiben dinámicas de constitución legal que difieren estadísticamente del estándar nacional (representado por Bogotá y otras capitales). El modelo predictivo, aunque perfectible en términos de precisión para clases minoritarias, validó la capacidad de anticipar el perfil legal de una empresa basándose únicamente en su contexto espacio-temporal.
+
+= Codigo
+
+Se ha realizado el análisis en un cuaderno de jupyter que se incluye completamente al final de la memoria.
+
+= Video
+
+El enlace al video en el que se presenta la práctica: 
 
 = Contribuciones
 

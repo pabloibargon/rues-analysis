@@ -57,20 +57,6 @@
   pagebreak(weak: true)
 }
 
-#let with_formatted_headings(doc) = {
-  show heading.where(depth: 1): it => {
-    [
-      #pagebreak(weak: true)
-      #text(
-        [#it.body #parbreak()],
-        size: 1.4em,
-        weight: "extrabold",
-        baseline: -0.1em,
-      )
-    ]
-  }
-  doc
-}
 
 #let ok = rgb("#c2f7a1")
 #let error = rgb("#f7a1a1")
@@ -141,9 +127,8 @@
   )
   #toc()
   #counter(page).update(1)
-  #with_formatted_headings(doc)
+  #doc
   #if bibliography_path != none [
-    #pagebreak()
     #bibliography(bibliography_path, style: "ieee")
   ]
 ]
