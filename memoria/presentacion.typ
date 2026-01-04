@@ -18,14 +18,40 @@
 )
 
 // GUION:
-// Breve repaso de la estructura de la presentación.
-// Destacar que no es solo análisis, sino ingeniería de datos (integración).
+// Breve repaso de la estructura. Destacar ingeniería de datos.
 #slide(title: "Objetivos de la Práctica")[
   - *Integración*: Enriquecer los datos registrales con contexto macroeconómico (Banco Mundial).
-  - *Limpieza*: Estandarización de fechas y manejo de desbalanceo de clases.
+  - *Limpieza*: Selección de variables y transformación a tipos adecuados.
   - *Análisis No Supervisado*: Segmentación de empresas (Clustering).
   - *Análisis Supervisado*: Predicción del tipo de sociedad (Clasificación).
   - *Validación*: Contraste de hipótesis geográfico.
+]
+
+// --- LIMPIEZA ---
+
+// GUION:
+// 1. Categorías: Optimización de memoria.
+// 2. Fechas: desde texto
+// 3. Booleanos: Mapeo explícito.
+// 4. Ruido: Eliminación de IDs.
+#slide(title: "Código: Limpieza")[
+  #text(size: 15pt)[
+  ```python
+  # Definimos columnas con baja cardinalidad para optimizar memoria
+  category_cols = ["Estado de la matrícula", "Tipo de Sociedad", ...]
+  df[category_cols] = df[category_cols].astype("category")
+  # ... 
+  # Conversión de fechas
+  date_cols = ["Fecha de Matrícula", "Fecha de Vigencia", ...]
+  df[date_cols] = df[date_cols].apply(pd.to_datetime, errors="coerce")
+  # ...
+  # Mapeo manual de booleanos y eliminación de ruido
+  bool_cols = ["Emprendimiento Social", "Extinción de Dominio"]
+  df[bool_cols] = df[bool_cols].apply(lambda s: s.map({"S": True, "N": False}))
+  # Elimina fecha de cancelacion por alto numero de nulos e identificadores
+  df = df.drop(columns=["Fecha de Cancelación", "Número de Matrícula", ...])
+  ```
+  ]
 ]
 
 // --- INTEGRACIÓN ---
@@ -38,29 +64,28 @@
 #slide(title: "Código: Ingesta Banco Mundial")[
   #text(size: 16pt)[
   ```python
+  # Descarga y lectura directa del ZIP desde la API
   url = "https://api.worldbank.org/v2/en/country/COL?downloadformat=csv"
-  response = requests.get(url) # Descarga directa del ZIP
+  response = requests.get(url) 
+  # ... (Extracción del ZIP en memoria) ...
+  wb_source = pd.read_csv(f, skiprows=4)
 
   target_indicators = {
       'NY.GDP.MKTP.KD.ZG': 'PIB_Crecimiento',
       'FP.CPI.TOTL.ZG': 'Inflacion', ...
   }
-
+  # ... (Filtrado y limpieza de columnas del BM) ...
   # Transformación: De formato 'Ancho' a 'Largo' y luego Pivot
-  # Objetivo: Tener [Año, PIB, Inflacion, ...]
   wb_melted = wb_clean.melt(id_vars=['Indicador'], var_name='Year', ...)
   wb_pivot = wb_melted.pivot(index='Year', columns='Indicador', values='Valor')
-  
-  # Integración: Contexto de nacimiento (Año Matrícula)
+  # Integración: Contexto de nacimiento (Left Join por Año Matrícula)
   df = df.merge(wb_pivot.add_suffix('_Matricula'), on='Year_Matricula', how='left')
   ```
   ]
 ]
 
 // GUION:
-// Resumir el resultado del proceso anterior.
-// Ahora cada fila del dataset original tiene pegada la "foto económica" del país
-// en el momento en que esa empresa nació.
+// Resultado: Dataset enriquecido.
 #slide(title: "Integración de Datos (Resultados)")[
   *Fuente Externa*: API del Banco Mundial.
   
@@ -82,21 +107,19 @@
 #slide(title: "Código: Pipeline de Clustering")[
   #text(size: 16pt)[
   ```python
+  # ... (Definición de num_features y cat_features) ...
   # Preprocesamiento diferenciado numérico/categórico
   preprocessor = ColumnTransformer(transformers=[
       ('num', StandardScaler(), num_features), 
       ('cat', OneHotEncoder(), cat_features)
   ])
-
   # Pipeline: Limpieza -> PCA (Reducción) -> Modelo
   pipeline = Pipeline([
       ('preprocessor', preprocessor),
       ('pca', PCA(n_components=2)), 
       ('kmeans', KMeans(n_clusters=4, random_state=44))
   ])
-
   pipeline.fit(df_model)
-  
   # Guardamos coordenadas PCA para visualización
   df_model['Cluster'] = pipeline.named_steps['kmeans'].labels_
   ```
@@ -126,17 +149,16 @@
 #slide(title: "Código: Clasificación Supervisada")[
   #text(size: 15pt)[
   ```python
-  # 1. Filtro: Eliminar clases con < 2 registros (rompen el stratify)
+  # Eliminar clases con < 2 registros (rompen el stratify)
   v_counts = df_clf[target_col].value_counts()
   df_clf = df_clf[df_clf[target_col].isin(v_counts[v_counts >= 2].index)]
-
-  # 2. Split estratificado (Mantiene proporción de clases)
+  # ... (Preprocesamiento con ColumnTransformer) ...
+  # Split estratificado
   X_train, X_test, y_train, y_test = train_test_split(..., stratify=y)
-
-  # 3. Random Forest con pesos balanceados
+  # Random Forest con pesos balanceados para mitigar desbalanceo
   model_rf = RandomForestClassifier(
       n_estimators=200, 
-      class_weight="balanced", # CRÍTICO para datos desbalanceados
+      class_weight="balanced", # CRÍTICO: Penaliza error en clases minoritarias
       n_jobs=-1
   )
   model_rf.fit(X_train, y_train)
@@ -145,10 +167,7 @@
 ]
 
 // GUION:
-// Mirar el gráfico de barras a la derecha.
-// Lo más importante: Las variables del Banco Mundial (Inflación, PIB) aparecen en el top.
-// Esto valida que el esfuerzo de integración valió la pena: la economía afecta el tipo de sociedad.
-// La ubicación (Medellín) también es predictor top, confirmando lo visto en clustering.
+// Importancia de variables: Inflación y Ubicación arriba.
 #slide(title: "Predicción de Tipo de Sociedad (Resultados)")[
   *Modelo*: Random Forest Classifier.
   
@@ -160,10 +179,9 @@
 // --- HIPÓTESIS ---
 
 // GUION:
-// 1. No podemos aplicar Chi-Cuadrado a ciegas.
-// 2. Preprocesamiento: Agrupamos cámaras pequeñas en "Otras" para cumplir la condición
+// 1. Preprocesamiento: Agrupamos cámaras pequeñas en "Otras" para cumplir la condición
 //    de frecuencias esperadas > 5.
-// 3. Residuos: El p-valor solo dice "hay relación". Calculamos los residuos para saber
+// 2. Residuos: El p-valor solo dice "hay relación". Calculamos los residuos para saber
 //    DÓNDE está la relación (qué región prefiere qué sociedad).
 #slide(title: "Código: Prueba Chi-Cuadrado")[
   #text(size: 16pt)[
@@ -173,13 +191,14 @@
   df['Region_Agrupada'] = df['Cámara'].apply(
       lambda x: x if x in top_camaras else 'Otras Regiones'
   )
-
-  # Tabla de contingencia: Región vs Tipo Sociedad
-  contingency_table = pd.crosstab(df['Region_Agrupada'], df['Sociedad_Agrupada'])
-
+  # Agrupar Tipos de Sociedad: Mantener los que tengan > 1% de datos, resto a 'Otros'
+  threshold = len(df_chi) * 0.01
+  soc_counts = df_chi['Tipo de Sociedad'].value_counts()
+  valid_socs = soc_counts[soc_counts > threshold].index
+  df_chi['Sociedad_Agrupada'] = df_chi['Tipo de Sociedad'].apply(lambda x: x if x in valid_socs else 'Otros Tipos')
+  # ... (Creación de tabla de contingencia) ...
   # Test estadístico
   chi2, p_val, dof, expected = stats.chi2_contingency(contingency_table)
-  
   # Cálculo de Residuos Estandarizados (Para el Heatmap)
   residuals = (contingency_table - expected) / np.sqrt(expected)
   ```
@@ -202,11 +221,6 @@
 
 // --- CIERRE ---
 
-// GUION:
-// Recapitular los 3 hallazgos principales.
-// 1. La integración funcionó (variables económicas predicen).
-// 2. Colombia no es uniforme (Antioquia/Montería son casos especiales).
-// 3. Limitación técnica: El desbalanceo de datos requiere técnicas avanzadas.
 #slide(title: "Conclusiones Generales")[
   - *Éxito en la Integración*: Las variables macroeconómicas demostraron ser señales predictivas reales, no ruido.
 
