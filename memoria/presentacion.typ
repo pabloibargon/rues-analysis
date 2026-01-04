@@ -20,7 +20,7 @@
 // GUION:
 // Breve repaso de la estructura. Destacar ingeniería de datos.
 #slide(title: "Objetivos de la Práctica")[
-  - *Integración*: Enriquecer los datos registrales con contexto macroeconómico (Banco Mundial).
+  - *Integración*: Enriquecer los datos registrales con su contexto macroeconómico (Banco Mundial).
   - *Limpieza*: Selección de variables y transformación a tipos adecuados.
   - *Análisis No Supervisado*: Segmentación de empresas (Clustering).
   - *Análisis Supervisado*: Predicción del tipo de sociedad (Clasificación).
