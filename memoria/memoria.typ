@@ -87,7 +87,7 @@ Se ha realizado el análisis en un cuaderno de jupyter que se incluye completame
 
 = Video
 
-El enlace al video en el que se presenta la práctica: 
+El enlace al video en el que se presenta la práctica: #link("https://drive.google.com/file/d/1FtR-99YlCNXccoLkhhyNkCisQ4SLf0x5/view?usp=drive_link").
 
 = Contribuciones
 
